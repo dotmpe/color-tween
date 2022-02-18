@@ -6,7 +6,7 @@ module.exports = function (startColorString, endColorString) {
   var startColor = Color(startColorString).rgb().array();
   var endColor = Color(endColorString).rgb().array();
   var tween = this;
-  params = {
+  tween.params = {
     updater: function(){},
     ender: function(){},
     length: 1000,
@@ -81,7 +81,7 @@ module.exports = function (startColorString, endColorString) {
 
   function overwrite(key) {
     return function(val) {
-      params[key] = val;
+      tween.params[key] = val;
       return tween;
     }
   }

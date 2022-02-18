@@ -52,14 +52,14 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__(1);
 
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var Easing = __webpack_require__(2);
 	var Color = __webpack_require__(4);
@@ -69,7 +69,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var startColor = Color(startColorString).rgb().array();
 	  var endColor = Color(endColorString).rgb().array();
 	  var tween = this;
-	  params = {
+	  tween.params = {
 	    updater: function(){},
 	    ender: function(){},
 	    length: 1000,
@@ -144,16 +144,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  function overwrite(key) {
 	    return function(val) {
-	      params[key] = val;
+	      tween.params[key] = val;
 	      return tween;
 	    }
 	  }
 	}
 
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var easingFunctions = __webpack_require__(3);
 
@@ -202,9 +202,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/*
 	Easing Types extracted from tween.js
@@ -405,9 +405,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -890,25 +890,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Color;
 
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	/* MIT license */
 	var colorNames = __webpack_require__(6);
 	var swizzle = __webpack_require__(7);
+	var hasOwnProperty = Object.hasOwnProperty;
 
 	var reverseNames = {};
 
 	// create a list of reverse color names
 	for (var name in colorNames) {
-		if (colorNames.hasOwnProperty(name)) {
+		if (hasOwnProperty.call(colorNames, name)) {
 			reverseNames[colorNames[name]] = name;
 		}
 	}
 
 	var cs = module.exports = {
-		to: {}
+		to: {},
+		get: {}
 	};
 
 	cs.get = function (string) {
@@ -942,23 +944,19 @@ return /******/ (function(modules) { // webpackBootstrap
 			return null;
 		}
 
-		var abbr = /^#([a-fA-F0-9]{3})$/;
-		var hex = /^#([a-fA-F0-9]{6})$/;
-		var rgba = /^rgba?\(\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
-		var per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
-		var keyword = /(\D+)/;
+		var abbr = /^#([a-f0-9]{3,4})$/i;
+		var hex = /^#([a-f0-9]{6})([a-f0-9]{2})?$/i;
+		var rgba = /^rgba?\(\s*([+-]?\d+)(?=[\s,])\s*(?:,\s*)?([+-]?\d+)(?=[\s,])\s*(?:,\s*)?([+-]?\d+)\s*(?:[,|\/]\s*([+-]?[\d\.]+)(%?)\s*)?\)$/;
+		var per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,?\s*([+-]?[\d\.]+)\%\s*,?\s*([+-]?[\d\.]+)\%\s*(?:[,|\/]\s*([+-]?[\d\.]+)(%?)\s*)?\)$/;
+		var keyword = /^(\w+)$/;
 
 		var rgb = [0, 0, 0, 1];
 		var match;
 		var i;
+		var hexAlpha;
 
-		if (match = string.match(abbr)) {
-			match = match[1];
-
-			for (i = 0; i < 3; i++) {
-				rgb[i] = parseInt(match[i] + match[i], 16);
-			}
-		} else if (match = string.match(hex)) {
+		if (match = string.match(hex)) {
+			hexAlpha = match[2];
 			match = match[1];
 
 			for (i = 0; i < 3; i++) {
@@ -966,13 +964,32 @@ return /******/ (function(modules) { // webpackBootstrap
 				var i2 = i * 2;
 				rgb[i] = parseInt(match.slice(i2, i2 + 2), 16);
 			}
+
+			if (hexAlpha) {
+				rgb[3] = parseInt(hexAlpha, 16) / 255;
+			}
+		} else if (match = string.match(abbr)) {
+			match = match[1];
+			hexAlpha = match[3];
+
+			for (i = 0; i < 3; i++) {
+				rgb[i] = parseInt(match[i] + match[i], 16);
+			}
+
+			if (hexAlpha) {
+				rgb[3] = parseInt(hexAlpha + hexAlpha, 16) / 255;
+			}
 		} else if (match = string.match(rgba)) {
 			for (i = 0; i < 3; i++) {
 				rgb[i] = parseInt(match[i + 1], 0);
 			}
 
 			if (match[4]) {
-				rgb[3] = parseFloat(match[4]);
+				if (match[5]) {
+					rgb[3] = parseFloat(match[4]) * 0.01;
+				} else {
+					rgb[3] = parseFloat(match[4]);
+				}
 			}
 		} else if (match = string.match(per)) {
 			for (i = 0; i < 3; i++) {
@@ -980,25 +997,30 @@ return /******/ (function(modules) { // webpackBootstrap
 			}
 
 			if (match[4]) {
-				rgb[3] = parseFloat(match[4]);
+				if (match[5]) {
+					rgb[3] = parseFloat(match[4]) * 0.01;
+				} else {
+					rgb[3] = parseFloat(match[4]);
+				}
 			}
 		} else if (match = string.match(keyword)) {
 			if (match[1] === 'transparent') {
 				return [0, 0, 0, 0];
 			}
 
-			rgb = colorNames[match[1]];
-
-			if (!rgb) {
+			if (!hasOwnProperty.call(colorNames, match[1])) {
 				return null;
 			}
 
+			rgb = colorNames[match[1]];
 			rgb[3] = 1;
 
 			return rgb;
+		} else {
+			return null;
 		}
 
-		for (i = 0; i < rgb.length; i++) {
+		for (i = 0; i < 3; i++) {
 			rgb[i] = clamp(rgb[i], 0, 255);
 		}
 		rgb[3] = clamp(rgb[3], 0, 1);
@@ -1011,7 +1033,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			return null;
 		}
 
-		var hsl = /^hsla?\(\s*([+-]?\d*[\.]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
+		var hsl = /^hsla?\(\s*([+-]?(?:\d{0,3}\.)?\d+)(?:deg)?\s*,?\s*([+-]?[\d\.]+)%\s*,?\s*([+-]?[\d\.]+)%\s*(?:[,|\/]\s*([+-]?(?=\.\d|\d)(?:0|[1-9]\d*)?(?:\.\d*)?(?:[eE][+-]?\d+)?)\s*)?\)$/;
 		var match = string.match(hsl);
 
 		if (match) {
@@ -1032,7 +1054,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			return null;
 		}
 
-		var hwb = /^hwb\(\s*([+-]?\d*[\.]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
+		var hwb = /^hwb\(\s*([+-]?\d{0,3}(?:\.\d+)?)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?(?=\.\d|\d)(?:0|[1-9]\d*)?(?:\.\d*)?(?:[eE][+-]?\d+)?)\s*)?\)$/;
 		var match = string.match(hwb);
 
 		if (match) {
@@ -1047,8 +1069,18 @@ return /******/ (function(modules) { // webpackBootstrap
 		return null;
 	};
 
-	cs.to.hex = function (rgb) {
-		return '#' + hexDouble(rgb[0]) + hexDouble(rgb[1]) + hexDouble(rgb[2]);
+	cs.to.hex = function () {
+		var rgba = swizzle(arguments);
+
+		return (
+			'#' +
+			hexDouble(rgba[0]) +
+			hexDouble(rgba[1]) +
+			hexDouble(rgba[2]) +
+			(rgba[3] < 1
+				? (hexDouble(Math.round(rgba[3] * 255)))
+				: '')
+		);
 	};
 
 	cs.to.rgb = function () {
@@ -1101,14 +1133,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	function hexDouble(num) {
-		var str = num.toString(16).toUpperCase();
+		var str = Math.round(num).toString(16).toUpperCase();
 		return (str.length < 2) ? '0' + str : str;
 	}
 
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
+
+	'use strict'
 
 	module.exports = {
 		"aliceblue": [240, 248, 255],
@@ -1261,9 +1295,10 @@ return /******/ (function(modules) { // webpackBootstrap
 		"yellowgreen": [154, 205, 50]
 	};
 
-/***/ },
+
+/***/ }),
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1296,11 +1331,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports) {
-
-	'use strict';
+/***/ (function(module, exports) {
 
 	module.exports = function isArrayish(obj) {
 		if (!obj || typeof obj === 'string') {
@@ -1313,9 +1346,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var conversions = __webpack_require__(10);
 	var route = __webpack_require__(11);
@@ -1397,9 +1430,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = convert;
 
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	/* MIT license */
 	var cssKeywords = __webpack_require__(6);
@@ -1498,41 +1531,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	convert.rgb.hsv = function (rgb) {
-		var r = rgb[0];
-		var g = rgb[1];
-		var b = rgb[2];
-		var min = Math.min(r, g, b);
-		var max = Math.max(r, g, b);
-		var delta = max - min;
+		var rdif;
+		var gdif;
+		var bdif;
 		var h;
 		var s;
-		var v;
 
-		if (max === 0) {
-			s = 0;
+		var r = rgb[0] / 255;
+		var g = rgb[1] / 255;
+		var b = rgb[2] / 255;
+		var v = Math.max(r, g, b);
+		var diff = v - Math.min(r, g, b);
+		var diffc = function (c) {
+			return (v - c) / 6 / diff + 1 / 2;
+		};
+
+		if (diff === 0) {
+			h = s = 0;
 		} else {
-			s = (delta / max * 1000) / 10;
+			s = diff / v;
+			rdif = diffc(r);
+			gdif = diffc(g);
+			bdif = diffc(b);
+
+			if (r === v) {
+				h = bdif - gdif;
+			} else if (g === v) {
+				h = (1 / 3) + rdif - bdif;
+			} else if (b === v) {
+				h = (2 / 3) + gdif - rdif;
+			}
+			if (h < 0) {
+				h += 1;
+			} else if (h > 1) {
+				h -= 1;
+			}
 		}
 
-		if (max === min) {
-			h = 0;
-		} else if (r === max) {
-			h = (g - b) / delta;
-		} else if (g === max) {
-			h = 2 + (b - r) / delta;
-		} else if (b === max) {
-			h = 4 + (r - g) / delta;
-		}
-
-		h = Math.min(h * 60, 360);
-
-		if (h < 0) {
-			h += 360;
-		}
-
-		v = ((max / 255) * 1000) / 10;
-
-		return [h, s, v];
+		return [
+			h * 360,
+			s * 100,
+			v * 100
+		];
 	};
 
 	convert.rgb.hwb = function (rgb) {
@@ -2043,12 +2083,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	convert.hex.rgb = function (args) {
-		var match = args.toString(16).match(/[a-f0-9]{6}/i);
+		var match = args.toString(16).match(/[a-f0-9]{6}|[a-f0-9]{3}/i);
 		if (!match) {
 			return [0, 0, 0];
 		}
 
-		var integer = parseInt(match[0], 16);
+		var colorString = match[0];
+
+		if (match[0].length === 3) {
+			colorString = colorString.split('').map(function (char) {
+				return char + char;
+			}).join('');
+		}
+
+		var integer = parseInt(colorString, 16);
 		var r = (integer >> 16) & 0xFF;
 		var g = (integer >> 8) & 0xFF;
 		var b = integer & 0xFF;
@@ -2256,9 +2304,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var conversions = __webpack_require__(10);
 
@@ -2273,11 +2321,10 @@ return /******/ (function(modules) { // webpackBootstrap
 		conversions that are not possible simply are not included.
 	*/
 
-	// https://jsperf.com/object-keys-vs-for-in-with-closure/3
-	var models = Object.keys(conversions);
-
 	function buildGraph() {
 		var graph = {};
+		// https://jsperf.com/object-keys-vs-for-in-with-closure/3
+		var models = Object.keys(conversions);
 
 		for (var len = models.length, i = 0; i < len; i++) {
 			graph[models[i]] = {
@@ -2360,7 +2407,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ }
+/***/ })
 /******/ ])
 });
 ;
