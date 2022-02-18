@@ -6,7 +6,7 @@ module.exports = function (startColorString, endColorString) {
   var startColor = Color(startColorString).rgb().array();
   var endColor = Color(endColorString).rgb().array();
   var tween = this;
-  params = {
+  tween.params = {
     updater: function(){},
     ender: function(){},
     length: 1000,
@@ -28,12 +28,12 @@ module.exports = function (startColorString, endColorString) {
 /* --------------- */
 
   function setEasing(name) {
-    params.easing = Easing(name) || Easing('linear');
+    tween.params.easing = Easing(name) || Easing('linear');
     return tween;
   }
 
   function start(cb) {
-    params.startTime = now();
+    tween.params.startTime = now();
     if (typeof(cb) === 'function'){
       setTimeout(cb);
     }
@@ -41,12 +41,12 @@ module.exports = function (startColorString, endColorString) {
   }
 
   function update() {
-    if (params.startTime) {
+    if (tween.params.startTime) {
       var frame = renderFrame();
       if (frame.progress > 1) {
         done();
       } else {
-        params.updater(frame.frame);
+        tween.params.updater(frame.frame);
       }
       return frame.frame;
     }
@@ -54,11 +54,11 @@ module.exports = function (startColorString, endColorString) {
   }
 
   function renderFrame() {
-    var pos = now() - params.startTime
-    var percent = pos / params.length;
+    var pos = now() - tween.params.startTime
+    var percent = pos / tween.params.length;
 
     var frame = endColor.map(function(val, i) {
-      return startColor[i] + (val - startColor[i]) * params.easing(percent);
+      return startColor[i] + (val - startColor[i]) * tween.params.easing(percent);
     });
 
     return {
@@ -68,20 +68,20 @@ module.exports = function (startColorString, endColorString) {
   }
 
   function done() {
-    params.updater(Color.rgb(endColor));
+    tween.params.updater(Color.rgb(endColor));
     stop();
     return tween;
   }
 
   function stop() {
-    params.startTime = undefined;
-    params.ender(Color.rgb(endColor));
+    tween.params.startTime = undefined;
+    tween.params.ender(Color.rgb(endColor));
     return tween;
   }
 
   function overwrite(key) {
     return function(val) {
-      params[key] = val;
+      tween.params[key] = val;
       return tween;
     }
   }
